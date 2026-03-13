@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
+
+/* ─── Custom properties ─────────────────────────────────────── */
+
+:root {
+  /* Brand colours */
+  --hdx-sapphire:  #007CE0;
+  --hdx-tomato:    #F2645A;
+  --hdx-mint:      #1EBFB3;
+
+  /* Greyscale ramp */
+  --hdx-black:     #000000;
+  --hdx-grey-dark: #888888;
+  --hdx-grey-mid:  #CCCCCC;
+  --hdx-grey-light:#EEEEEE;
+  --hdx-white:     #ffffff;
+
+  /* Sequential colour ramps */
+  --hdx-sapphire-dark:       #0063B3;
+  --hdx-sapphire-light:      #66B0EC;
+  --hdx-sapphire-ultralight: #CCE5F9;
+
+  --hdx-tomato-dark:         #C25048;
+  --hdx-tomato-light:        #F7A29C;
+  --hdx-tomato-ultralight:   #FCE0DE;
+
+  --hdx-mint-dark:           #18998F;
+  --hdx-mint-light:          #78D9D1;
+  --hdx-mint-ultralight:     #D2F2F0;
+
+  /* Typography */
+  --font-family:       'Source Sans 3', 'Source Sans Pro', Arial, sans-serif;
+  --font-size-xs:      10px;
+  --font-size-sm:      12px;
+  --font-size-base:    14px;
+  --font-size-md:      16px;
+  --font-size-lg:      20px;
+  --font-size-xl:      24px;
+
+  /* Chart tokens */
+  --chart-line-width:  3px;
+  --chart-bg:          var(--hdx-white);
+  --chart-grid:        var(--hdx-grey-light);
+  --chart-axis:        var(--hdx-grey-mid);
+  --chart-text:        var(--hdx-grey-dark);
+  --chart-title-color: var(--hdx-black);
+}
+
+/* ─── Reset / base ───────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  color: var(--hdx-black);
+  background: var(--hdx-white);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Typography ─────────────────────────────────────────────── */
+
+h1, h2, h3, h4 {
+  font-family: var(--font-family);
+  font-weight: 700;
+  color: var(--hdx-black);
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+}
+
+h1 { font-size: var(--font-size-xl); }
+h2 { font-size: var(--font-size-lg); }
+h3 { font-size: var(--font-size-md); }
+h4 { font-size: var(--font-size-base); }
+
+p {
+  margin: 0 0 1em;
+  line-height: 1.5;
+  color: var(--hdx-grey-dark);
+}
+
+/* ─── Data labels (above chart title) ───────────────────────── */
+
+.data-label {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: 400;
+  text-transform: uppercase;
+
+  color: var(--hdx-sapphire);
+  text-decoration: underline;
+}
+
+a.data-label:hover {
+  color: var(--hdx-grey-dark);
+}
+
+.data-label + .data-source {
+  margin-left: 0.25em;
+  font-weight: 400;
+}
+
+.data-source {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  color: var(--hdx-grey-dark);
+}
+
+/* ─── Chart wrapper ──────────────────────────────────────────── */
+
+.chart {
+  background: var(--chart-bg);
+}
+
+/* ─── SVG: titles ────────────────────────────────────────────── */
+
+.chart-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  fill: var(--chart-title-color);
+}
+
+.chart-subtitle {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  fill: var(--hdx-grey-dark);
+}
+
+/* ─── SVG: axes ──────────────────────────────────────────────── */
+
+.axis-line {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+  fill: none;
+}
+
+.axis-tick {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.axis-label {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  fill: var(--chart-text);
+}
+
+/* ─── SVG: grid ──────────────────────────────────────────────── */
+
+.grid-line {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+/* ─── SVG: lines ─────────────────────────────────────────────── */
+
+/* 3px per guidelines */
+.line {
+  fill: none;
+  stroke-width: var(--chart-line-width);
+}
+
+.line-sapphire { stroke: var(--hdx-sapphire); }
+.line-tomato   { stroke: var(--hdx-tomato); }
+.line-mint     { stroke: var(--hdx-mint); }
+.line-grey     { stroke: var(--hdx-grey-dark); }
+
+/* ─── SVG: area fills ────────────────────────────────────────── */
+
+.area-sapphire { fill: var(--hdx-sapphire); opacity: 0.12; }
+.area-tomato   { fill: var(--hdx-tomato);   opacity: 0.12; }
+.area-mint     { fill: var(--hdx-mint);     opacity: 0.12; }
+
+/* ─── SVG: data points ───────────────────────────────────────── */
+
+.dot-sapphire { fill: var(--hdx-sapphire); }
+.dot-tomato   { fill: var(--hdx-tomato); }
+.dot-mint     { fill: var(--hdx-mint); }
+
+/* ─── Legend ─────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: var(--font-size-sm);
+  color: var(--hdx-grey-dark);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 3px;          /* matches line stroke width */
+  flex-shrink: 0;
+}
+
+.legend-swatch-sapphire { background: var(--hdx-sapphire); }
+.legend-swatch-tomato   { background: var(--hdx-tomato); }
+.legend-swatch-mint     { background: var(--hdx-mint); }
+.legend-swatch-grey     { background: var(--hdx-grey-dark); }
+
+/* ─── Small multiples grid ───────────────────────────────────── */
+
+.small-multiples {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem 2rem;  /* extra column gap to give overflow room */
+}
+
+/* ─── Source annotation ──────────────────────────────────────── */
+
+.chart-source {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  color: var(--hdx-grey-dark);
+  margin-top: 0.75rem;
+}
