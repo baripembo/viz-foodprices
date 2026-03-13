@@ -8,7 +8,7 @@
   let currentView = $state(new URLSearchParams(window.location.search).get('view') ?? 'admin')
 
   onMount(async () => {
-    const raw = await fetch('/data/wfp_food_prices_lbn.csv').then(r => r.text())
+    const raw = await fetch(`${import.meta.env.BASE_URL}data/wfp_food_prices_lbn.csv`).then(r => r.text())
     data = csvParse(raw, autoType)
   })
 </script>
