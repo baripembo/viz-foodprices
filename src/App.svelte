@@ -4,13 +4,15 @@
   import SmallMultiples from './components/SmallMultiples.svelte'
   import AdminView from './components/AdminView.svelte'
 
+  const DATA_FROM = new Date(2025, 6, 1) // July 1 2025, local time
+
   let data = $state([])
   let currentView = $state(new URLSearchParams(window.location.search).get('view') ?? 'admin')
 
   onMount(async () => {
     const raw = await fetch(`${import.meta.env.BASE_URL}data/wfp_food_prices_lbn.csv`).then(r => r.text())
     const parsed = csvParse(raw, autoType)
-    data = parsed.filter(d => d.date >= new Date('2025-07-01'))
+    data = parsed.filter(d => d.date >= DATA_FROM)
   })
 </script>
 
@@ -22,7 +24,7 @@
   {:else if currentView === 'overview'}
     <SmallMultiples {data} />
   {:else}
-    <AdminView {data} adminField="admin1" />
+    <AdminView {data} adminField="admin1" dataFrom={DATA_FROM} />
   {/if}
 </main>
 

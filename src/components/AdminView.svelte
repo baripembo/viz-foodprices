@@ -4,7 +4,24 @@
 
   const CUTOFF = new Date('2016-01-01')
 
-  let { data, adminField = 'admin1' } = $props()
+  let { data, adminField = 'admin1', dataFrom = null } = $props()
+
+  let dataFromLabel = $derived(dataFrom ? timeFormat('%b %Y')(dataFrom) : null)
+
+  let latestDateLabel = $derived(() => {
+    const dates = baseData.map(d => d.date)
+    if (dates.length === 0) return ''
+    return timeFormat('%b %Y')(new Date(Math.max(...dates)))
+  })
+
+  let trendRangeLabel = $derived(() => {
+    const dates = baseData.map(d => d.date)
+    if (dates.length === 0) return 'Trend'
+    const minD = new Date(Math.min(...dates))
+    const maxD = new Date(Math.max(...dates))
+    const fmt = timeFormat('%b %Y')
+    return `${fmt(minD)} – ${fmt(maxD)}`
+  })
 
   const EXCLUDE_COMMODITY = 'Exchange rate (unofficial)'
   const EXCLUDE_CATEGORY = 'non-food'
@@ -82,6 +99,7 @@
       const peak = sorted.reduce((max, d) => d.value > max.value ? d : max, sorted[0])
       return {
         commodity,
+        series: sorted,
         latestPrice: latest.value,
         prevPrice: prev?.value ?? null,
         change: prev != null ? latest.value - prev.value : null,
@@ -90,6 +108,52 @@
       }
     }).filter(Boolean).sort((a, b) => b.latestPrice - a.latestPrice)
   })
+
+  let sortCol = $state('change')
+  let sortDir = $state(-1)  // -1 = desc, 1 = asc
+
+  function setSort(col) {
+    if (sortCol === col) sortDir = sortDir * -1
+    else { sortCol = col; sortDir = col === 'commodity' ? 1 : -1 }
+  }
+
+  let sortedTableData = $derived(() => {
+    const rows = tableData()
+    return [...rows].sort((a, b) => {
+      const av = a[sortCol], bv = b[sortCol]
+      if (av == null && bv == null) return 0
+      if (av == null) return 1
+      if (bv == null) return -1
+      if (typeof av === 'string') return sortDir * av.localeCompare(bv)
+      return sortDir * (av - bv)
+    })
+  })
+
+  const SW = 80, SH = 28, SP = 4  // sparkline width, height, padding
+
+  function sparkCoords(series) {
+    const minV = Math.min(...series.map(d => d.value))
+    const maxV = Math.max(...series.map(d => d.value))
+    const minT = series[0].date.getTime()
+    const maxT = series[series.length - 1].date.getTime()
+    const xRange = maxT - minT || 1
+    const yRange = maxV - minV
+    return series.map(d => ({
+      x: SP + ((d.date.getTime() - minT) / xRange) * (SW - SP * 2),
+      y: yRange === 0 ? SH / 2 : SP + ((maxV - d.value) / yRange) * (SH - SP * 2),
+    }))
+  }
+
+  function sparkPoints(series) {
+    if (series.length < 2) return ''
+    return sparkCoords(series).map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  }
+
+  function sparkEndpoints(series) {
+    if (series.length < 2) return []
+    const coords = sparkCoords(series)
+    return [coords[0], coords[coords.length - 1]]
+  }
 
   function toggleCommodity(c) {
     const next = new Set(selectedCommodities)
@@ -450,23 +514,45 @@
       </select>
     </div>
 
-    <div class="chart" bind:this={chartEl}></div>
-
     {#if tableData().length > 0}
     <table class="price-table">
       <thead>
         <tr>
-          <th>Commodity</th>
-          <th class="num-col">Latest price</th>
-          <th class="num-col">Prev month</th>
-          <th class="num-col">Monthly change</th>
-          <th class="num-col">Peak price (since 2016)</th>
+          <th class="sortable" onclick={() => setSort('commodity')}>
+            Commodity{#if sortCol === 'commodity'}<span class="sort-icon">{sortDir === 1 ? '▲' : '▼'}</span>{/if}
+          </th>
+          <th>{trendRangeLabel()}</th>
+          <th class="num-col sortable" onclick={() => setSort('latestPrice')}>
+            Latest price{#if sortCol === 'latestPrice'}<span class="sort-icon">{sortDir === 1 ? '▲' : '▼'}</span>{/if}
+          </th>
+          <th class="num-col sortable" onclick={() => setSort('prevPrice')}>
+            Prev month{#if sortCol === 'prevPrice'}<span class="sort-icon">{sortDir === 1 ? '▲' : '▼'}</span>{/if}
+          </th>
+          <th class="num-col sortable" onclick={() => setSort('change')}>
+            Monthly change{#if sortCol === 'change'}<span class="sort-icon">{sortDir === 1 ? '▲' : '▼'}</span>{/if}
+          </th>
+          <th class="num-col">Peak price{dataFromLabel ? ` (since ${dataFromLabel})` : ''}</th>
         </tr>
       </thead>
       <tbody>
-        {#each tableData() as row}
+        {#each sortedTableData() as row}
         <tr>
           <td>{row.commodity}</td>
+          <td class="num-col sparkline-cell">
+            <svg width={SW} height={SH} style="display:block;margin:0 auto">
+              <polyline
+                points={sparkPoints(row.series)}
+                fill="none"
+                stroke="var(--hdx-sapphire)"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+              {#each sparkEndpoints(row.series) as pt}
+                <circle cx={pt.x} cy={pt.y} r="2.5" fill="var(--hdx-sapphire)" />
+              {/each}
+            </svg>
+          </td>
           <td class="num-col">${row.latestPrice.toFixed(2)}</td>
           <td class="num-col">{row.prevPrice != null ? '$' + row.prevPrice.toFixed(2) : '—'}</td>
           <td class="num-col change" class:up={row.change > 0} class:down={row.change < 0}>
@@ -481,7 +567,10 @@
     </table>
     {/if}
 
-    <p class="chart-source"><a class="data-label" href="https://data.humdata.org/dataset/wfp-food-prices-for-lebanon" target="_blank" rel="noopener">DATA</a><span class="data-source"> | Dec 2025 | HDX</span></p>
+    <div class="chart-header">Price trends over time by commodity</div>
+    <div class="chart" bind:this={chartEl}></div>
+
+    <p class="chart-source"><a class="data-label" href="https://data.humdata.org/dataset/wfp-food-prices-for-lebanon" target="_blank" rel="noopener">DATA</a><span class="data-source"> | {latestDateLabel()} | HDX</span></p>
   </div>
 </div>
 
@@ -604,6 +693,7 @@
     color: var(--hdx-black);
     padding: 12px 10px;
     text-align: left;
+    white-space: nowrap;
   }
 
   .price-table td {
@@ -617,6 +707,33 @@
   .price-table .num-col {
     text-align: right;
     font-variant-numeric: tabular-nums;
+  }
+
+  .chart-header {
+    margin-top: 2rem;
+    background-color: #EDF6FD;
+    border-bottom: 1px solid var(--hdx-grey-mid);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--hdx-black);
+    padding: 12px 10px;
+  }
+
+  .sparkline-cell { width: 88px; padding: 2px 10px; vertical-align: middle; }
+
+  .price-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .price-table th.sortable:hover {
+    color: var(--hdx-sapphire);
+  }
+
+  .sort-icon {
+    font-size: 9px;
+    margin-left: 3px;
+    vertical-align: middle;
   }
 
   .change { font-weight: 600; }
