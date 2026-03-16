@@ -9,7 +9,8 @@
 
   onMount(async () => {
     const raw = await fetch(`${import.meta.env.BASE_URL}data/wfp_food_prices_lbn.csv`).then(r => r.text())
-    data = csvParse(raw, autoType)
+    const parsed = csvParse(raw, autoType)
+    data = parsed.filter(d => d.date >= new Date('2025-07-01'))
   })
 </script>
 

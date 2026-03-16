@@ -1,10 +1,11 @@
 <script>
   import { select, scaleTime, scaleLinear, extent, line,
-           rollup, mean, timeFormat, timeYear, pointer } from 'd3'
+           rollup, mean, timeFormat, timeMonth, pointer } from 'd3'
+
+  const CUTOFF = new Date('2016-01-01')
 
   let { data, adminField = 'admin1' } = $props()
 
-  const CUTOFF = new Date('2016-01-01')
   const EXCLUDE_COMMODITY = 'Exchange rate (unofficial)'
   const EXCLUDE_CATEGORY = 'non-food'
 
@@ -167,17 +168,17 @@
     // base line
     xAxisG.append('line').attr('x2', iW).attr('stroke', '#ccc').attr('stroke-width', 1)
 
-    // year labels — one per year, positioned at Jan 1
-    const yearTicks = x.ticks(timeYear)
-    xAxisG.selectAll('.year-label')
-      .data(yearTicks)
+    // month labels — abbreviated 3-letter month, with year appended on January
+    const monthTicks = x.ticks(timeMonth)
+    xAxisG.selectAll('.month-label')
+      .data(monthTicks)
       .join('text')
       .attr('class', 'axis-label')
       .attr('x', d => x(d))
       .attr('y', 16)
       .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
-      .text(d => timeFormat('%Y')(d))
+      .style('font-size', '11px')
+      .text(d => timeFormat('%b %Y')(d))
 
     // Y axis
     const yTickGs = g.selectAll('.y-tick')

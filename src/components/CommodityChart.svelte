@@ -1,5 +1,5 @@
 <script>
-  import { scaleTime, scaleLinear, line, max } from 'd3'
+  import { scaleTime, scaleLinear, line, min, max, extent } from 'd3'
 
   let { title, unit, pricetype, data, xDomain } = $props()
 
@@ -11,7 +11,9 @@
   const USD_COLOR = '#007CE0'   /* hdx-sapphire */
 
   function fmtUSD(v) {
-    return '$' + Math.round(v)
+    if (v >= 100) return '$' + Math.round(v)
+    if (v >= 10) return '$' + v.toFixed(1)
+    return '$' + v.toFixed(2)
   }
 
   let usdData = $derived(data.filter(d => d.usdprice > 0).sort((a, b) => a.date - b.date))
@@ -24,7 +26,7 @@
 
   let y = $derived(
     scaleLinear()
-      .domain([0, max(usdData, d => d.usdprice) || 1])
+      .domain([min(usdData, d => d.usdprice) ?? 0, max(usdData, d => d.usdprice) || 1])
       .nice()
       .range([iH, 0])
   )
@@ -33,7 +35,12 @@
     line().x(d => x(d.date)).y(d => y(d.usdprice))(usdData)
   )
 
-  let xTicks = $derived(x.ticks(4))
+  // One tick per year, deduplicated
+  let xTicks = $derived(
+    x.ticks(4).filter((tick, i, arr) =>
+      i === 0 || tick.getFullYear() !== arr[i - 1].getFullYear()
+    )
+  )
   let yTicks = $derived(y.ticks(4))
 
   let lastUSD = $derived(usdData.at(-1))
