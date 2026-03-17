@@ -4,7 +4,10 @@
 
   const CUTOFF = new Date('2016-01-01')
 
-  let { data, adminField = 'admin1', dataFrom = null } = $props()
+  let { data, dataFrom = null } = $props()
+
+  let aggLevel = $state('national') // 'national' | 'admin1' | 'admin2'
+  let adminField = $derived(aggLevel === 'admin2' ? 'admin2' : 'admin1')
 
   let dataFromLabel = $derived(dataFrom ? timeFormat('%b %Y')(dataFrom) : null)
 
@@ -38,7 +41,9 @@
   )
 
   let admins = $derived(
-    [...new Set(baseData.map(d => d[adminField]))].sort()
+    aggLevel === 'national'
+      ? []
+      : [...new Set(baseData.map(d => d[adminField]))].sort()
   )
 
   let commodities = $derived(
@@ -59,6 +64,11 @@
   let resetFn = null
 
   $effect(() => {
+    aggLevel  // track level changes
+    selectedAdmin = null
+  })
+
+  $effect(() => {
     if (admins.length > 0 && selectedAdmin === null) {
       selectedAdmin = admins[0]
     }
@@ -73,10 +83,9 @@
   })
 
   let chartData = $derived(() => {
-    if (!selectedAdmin || selectedCommodities.size === 0) return new Map()
+    if (aggLevel !== 'national' && !selectedAdmin) return new Map()
     const filtered = baseData.filter(d =>
-      d[adminField] === selectedAdmin &&
-      selectedCommodities.has(d.commodity)
+      (aggLevel === 'national' || d[adminField] === selectedAdmin)
     )
     return rollup(
       filtered,
@@ -475,7 +484,7 @@
 </script>
 
 <div class="admin-view">
-  <aside class="admin-sidebar">
+  <!-- <aside class="admin-sidebar">
     <div class="sidebar-inner">
     <h4 class="sidebar-heading">Commodities</h4>
     <div class="link-btns">
@@ -498,20 +507,24 @@
       {/each}
     </div>
     </div>
-  </aside>
+  </aside> -->
 
   <div class="admin-main">
     <div class="admin-controls">
-      <span class="controls-label">Food prices for</span>
-      <select
-        id="admin-select"
-        value={selectedAdmin}
-        onchange={e => selectedAdmin = e.target.value}
-      >
-        {#each admins as a}
-          <option value={a}>{a}</option>
+      <span class="controls-label">Show prices</span>
+      <div class="agg-toggle">
+        {#each [['national','Nationally'],['admin1','Admin 1'],['admin2','Admin 2']] as [val, label]}
+          <button class="agg-btn" class:active={aggLevel === val} onclick={() => aggLevel = val}>
+            {label}
+          </button>
         {/each}
-      </select>
+      </div>
+      {#if aggLevel !== 'national' && selectedAdmin}
+        <span class="controls-label">for</span>
+        <select value={selectedAdmin} onchange={e => selectedAdmin = e.target.value}>
+          {#each admins as a}<option value={a}>{a}</option>{/each}
+        </select>
+      {/if}
     </div>
 
     {#if tableData().length > 0}
@@ -567,17 +580,18 @@
     </table>
     {/if}
 
-    <div class="chart-header">Price trends over time by commodity</div>
+    <!-- <div class="chart-header">Price trends over time by commodity</div>
     <div class="chart" bind:this={chartEl}></div>
 
-    <p class="chart-source"><a class="data-label" href="https://data.humdata.org/dataset/wfp-food-prices-for-lebanon" target="_blank" rel="noopener">DATA</a><span class="data-source"> | {latestDateLabel()} | HDX</span></p>
+    <p class="chart-source"><a class="data-label" href="https://data.humdata.org/dataset/wfp-food-prices-for-lebanon" target="_blank" rel="noopener">DATA</a><span class="data-source"> | {latestDateLabel()} | HDX</span></p> -->
   </div>
 </div>
 
 <style>
   .admin-view {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 1fr;
+    /* grid-template-columns: 200px 1fr; */
     gap: 1.5rem;
     align-items: stretch;
   }
@@ -650,6 +664,11 @@
     font-weight: 600;
     color: var(--hdx-black);
   }
+
+  .agg-toggle { display: flex; gap: 0; border: 1px solid var(--hdx-grey-mid); border-radius: 3px; overflow: hidden; }
+  .agg-btn { background: none; border: none; border-right: 1px solid var(--hdx-grey-mid); padding: 3px 10px; font-size: var(--font-size-sm); font-family: var(--font-family); cursor: pointer; color: var(--hdx-grey-dark); }
+  .agg-btn:last-child { border-right: none; }
+  .agg-btn.active { background: var(--hdx-sapphire); color: white; font-weight: 600; }
 
   .admin-controls select {
     font-family: var(--font-family);
