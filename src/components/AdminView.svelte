@@ -707,6 +707,10 @@
     font-size: 13px;
   }
 
+  .price-table tbody tr:hover td {
+    background-color: #f5f5f5;
+  }
+
   .price-table {
     width: 100%;
     border-collapse: collapse;
