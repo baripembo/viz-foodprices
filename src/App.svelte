@@ -8,6 +8,7 @@
   const LOCATIONS = [
     { id: 'lbn', label: 'Lebanon', file: 'wfp_food_prices_lbn.csv' },
     { id: 'pse', label: 'Palestine', file: 'wfp_food_prices_pse.csv' },
+    { id: 'irn', label: 'Iran', file: 'wfp_food_prices_irn.csv' },
   ]
 
   let data = $state([])
@@ -36,7 +37,7 @@
         <option value={loc.id}>{loc.label}</option>
       {/each}
     </select>
-    Food Prices
+    Commodity Prices
   </h1>
 
   {#if data.length === 0}

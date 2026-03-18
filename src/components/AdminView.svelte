@@ -27,7 +27,6 @@
   })
 
   const EXCLUDE_COMMODITY = 'Exchange rate (unofficial)'
-  const EXCLUDE_CATEGORY = 'non-food'
 
   let chartEl = $state(null)
 
@@ -35,9 +34,12 @@
     data.filter(d =>
       d.usdprice > 0 &&
       d.date >= CUTOFF &&
-      d.category !== EXCLUDE_CATEGORY &&
       d.commodity !== EXCLUDE_COMMODITY
     )
+  )
+
+  let hasAdmin2 = $derived(
+    baseData.some(d => d.admin2 !== d.admin1)
   )
 
   let admins = $derived(
@@ -64,6 +66,10 @@
   let resetFn = null
 
   $effect(() => {
+    if (aggLevel === 'admin2' && !hasAdmin2) aggLevel = 'admin1'
+  })
+
+  $effect(() => {
     aggLevel  // track level changes
     selectedAdmin = null
   })
@@ -73,6 +79,7 @@
       selectedAdmin = admins[0]
     }
   })
+
 
   $effect(() => {
     if (commodities.length > 0 && !commoditiesInitialised) {
@@ -85,7 +92,7 @@
   let chartData = $derived(() => {
     if (aggLevel !== 'national' && !selectedAdmin) return new Map()
     const filtered = baseData.filter(d =>
-      (aggLevel === 'national' || d[adminField] === selectedAdmin)
+      aggLevel === 'national' || d[adminField] === selectedAdmin
     )
     return rollup(
       filtered,
@@ -115,11 +122,11 @@
         peakPrice: peak.value,
         peakDate: peak.date,
       }
-    }).filter(Boolean).sort((a, b) => b.latestPrice - a.latestPrice)
+    }).filter(Boolean)
   })
 
   let sortCol = $state('change')
-  let sortDir = $state(-1)  // -1 = desc, 1 = asc
+  let sortDir = $state(-1)
 
   function setSort(col) {
     if (sortCol === col) sortDir = sortDir * -1
@@ -127,8 +134,7 @@
   }
 
   let sortedTableData = $derived(() => {
-    const rows = tableData()
-    return [...rows].sort((a, b) => {
+    return [...tableData()].sort((a, b) => {
       const av = a[sortCol], bv = b[sortCol]
       if (av == null && bv == null) return 0
       if (av == null) return 1
@@ -513,11 +519,16 @@
     <div class="admin-controls">
       <span class="controls-label">Show prices</span>
       <div class="agg-toggle">
-        {#each [['national','Nationally'],['admin1','Admin 1'],['admin2','Admin 2']] as [val, label]}
+        {#each [['national','Nationally'],['admin1','Admin 1']] as [val, label]}
           <button class="agg-btn" class:active={aggLevel === val} onclick={() => aggLevel = val}>
             {label}
           </button>
         {/each}
+        {#if hasAdmin2}
+          <button class="agg-btn" class:active={aggLevel === 'admin2'} onclick={() => aggLevel = 'admin2'}>
+            Admin 2
+          </button>
+        {/if}
       </div>
       {#if aggLevel !== 'national' && selectedAdmin}
         <span class="controls-label">for</span>
@@ -723,7 +734,7 @@
     vertical-align: middle;
   }
 
-  .price-table .num-col {
+.price-table .num-col {
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
